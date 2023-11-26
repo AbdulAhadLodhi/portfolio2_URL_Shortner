@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener By Abdul</title>
+</head>
+<body>
+    <h1>URL Shortener By Abdul</h1>
+    <form action="/shorten" method="post">
+        <label for="long_url">Enter a URL:</label>
+        <input type="text" name="long_url" id="long_url" required>
+        <label for="customize_code">Customize Code (optional):</label>
+        <input type="text" name="customize_code" id="customize_code">
+        <button type="submit">Shorten</button>
+    </form>
+
+    <!-- QR Code Section -->
+    <h2>QR Code</h2>
+    <div id="qrCodeContainer"></div>
+
+    <h2>Shortened URLs</h2>
+    <ul id="urlList"></ul>
+    <button onclick="testURLs()">Test URLs</button>
+
+    <script>
+        async function testURLs() {
+            const urls = document.getElementById("urlList").getElementsByTagName("a");
+
+            for (let i = 0; i < urls.length; i++) {
+                const shortCode = urls[i].innerText;
+                const response = await fetch(`/test?short_code=${shortCode}`);
+                const result = await response.json();
+
+                const listItem = document.createElement("li");
+                listItem.textContent = `${shortCode} - ${result.success ? "Success" : "Failure"}`;
+                urls[i].appendChild(listItem);
+            }
+        }
+
+        // Fetch and display the list of shortened URLs and QR code on page load
+        async function fetchAndDisplayUrls() {
+            const response = await fetch('/list');
+            const urls = await response.json();
+
+            const urlList = document.getElementById("urlList");
+            urlList.innerHTML = "";
+
+            for (let i = 0; i < urls.length; i++) {
+                const listItem = document.createElement("li");
+                const link = document.createElement("a");
+                link.href = `/${urls[i].short_code}`;
+                link.textContent = urls[i].short_code;
+                listItem.appendChild(link);
+                urlList.appendChild(listItem);
+
+                // Fetch QR code for the current URL and display it
+                await fetchAndDisplayQRCode(urls[i].short_code);
+            }
+        }
+
+        // Fetch and display the QR code for a specific short code
+        async function fetchAndDisplayQRCode(shortCode) {
+            const response = await fetch(`/qrcode?data=${shortCode}`);
+            const qrCodeUrl = await response.json();
+
+            // Display the QR code
+            const qrCodeContainer = document.getElementById("qrCodeContainer");
+            const qrCodeImage = document.createElement("img");
+            qrCodeImage.src = qrCodeUrl;
+            qrCodeContainer.appendChild(qrCodeImage);
+        }        
+
+        // Fetch and display the list of shortened URLs and QR code on page load
+        window.onload = async function () {
+            await fetchAndDisplayUrls();
+            await testURLs();
+        };
+    </script>
+</body>
+</html>
